@@ -1,0 +1,397 @@
+---
+title: "HW1 Sally Sun  qs2216"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+Chapter 2
+7.
+(a)
+```{r}
+x=matrix(data=c(0,3,0,2,0,0,0,1,3,0,1,2,-1,0,1,1,1,1), nrow=6, ncol=3, byrow=TRUE)
+distance=sqrt(rowSums(x^2))
+x=cbind(x,round(distance, digits = 2))
+x
+```
+
+(b) Green.
+The one shortest distance is the 5th observation which has a color of green. 
+
+(c) Red
+The three shortest distances are the 2nd, 5th, and 6th observations, which have colors of red, green, and red. 
+
+(d) K should be small. More neighbors would cause more points to be classified similarly, hence making the decision boundary smoother, and more linear. So a very non-linear decision boundary would have a smaller K. 
+
+9. 
+(a) 
+```{r}
+library(ISLR)
+x=na.omit(Auto)
+```
+Qualitative variables are: origin, name
+Quantitative variables are: mpg, cylinders, displacement, horsepower, weight, acceleration, and year. 
+
+(b)
+```{r}
+sapply(x[1:7], range)
+```
+mpg ranges from 9.0 to 46.6
+cylinders ranges from 3 to 8,
+displacement ranges from 68 to 455, 
+horsepower ranges from 46 to 230, 
+weight ranges from 1613 to 5140, 
+acceleration ranges from 8.0 to 24.8, 
+year ranges from 70 to 82. 
+
+(c)
+```{r}
+sapply(x[1:7],mean)
+sapply(x[1:7],sd)
+```
+mpg has mean 23.4 and standard deviation 7.8.
+cylinders has mean 5.5 and standard deciation 1.7. 
+displacement has mean 194.4 and standard deviation 104.6.
+horsepower has mean 104.5 and standard deviation 38.5.
+weight has mean 2977.6 and standard deviation 849.4.
+acceleration has mean 15.5 and standard deviation 2.8.
+year has mean 76.0 and standard deviation 3.7.
+
+(d)
+```{r}
+y=x[-c(10:85),]
+sapply(y[1:7], range)
+sapply(y[1:7], mean)
+sapply(y[1:7], sd)
+```
+mpg ranges from 11.0 to 46.6, has mean 24.4 and standard deviation 7.9.
+cylinders ranges from 3 to 8, has mean 5.4 and standard deviation 1.7.
+displacement ranges from 68 to 455, has mean 187.2 and standard deviation 99.7.
+horsepower ranges from 46 to 230, has mean 100.7 and standard deviation 35.7.
+weight ranges from 1649 to 4997, has mean 2936.0 and standard deviation 811.3.
+acceleration ranges from 8.5 to 24.8, has mean 15.7 and standard deviation 2.7.
+year ranges from 70 to 82, has mean 77.1 and standard deviation 3.1.
+
+(e)
+```{r}
+plot(x$displacement,x$mpg)
+plot(x$horsepower,x$mpg)
+plot(x$weight,x$mpg)
+plot(x$acceleration,x$mpg)
+```
+As displacement increases, mpg(speed) decreases. 
+As horsepower increases, mpg(speed) decreases. 
+As weight increases, mpg(speed) decreases. 
+There is not a clear positive correlation between acceleration and mpg. 
+
+(f)
+Displacement, horsepower, and weight are useful variables in predicting mpg, while acceleration might not be a useful variable in predicting mpg because there is no clear positive correlation between acceleration and mpg. 
+
+
+10.
+(a)
+```{r}
+library(MASS)
+```
+506 rows and 14 columns. 
+Rows are each individual cases (regions within Boston, or towns).
+Columns include per capita crime rate by town, proportion of residential land zoned for lots over 25,000 sq.ft, proportion of non-retail business acres per town, whether or not tract bounds river, nitrogen oxides concentration, average number of rooms per dwelling, proportion of owner-occupied units built prior to 1940, weighted mean of distances to five Boston employment centres, index of accessibility to radial highways, full-value property-tax rate, pupil-teacher ratio by town, proportion of blacks by town, lower status of the population, median value of owner-occupied homes. 
+
+(b)
+```{r}
+pairs(Boston)
+```
+crim is correlated with age, dis, medv
+zn is correlated with indus, nox, dis, lstat
+indus is correlated with zn, dis
+nox is correlated with zn, dis
+dis is correlated with crim, zn, indus, nox, black
+lstat is correlated with zn, age, dis
+
+(c) Yes. 
+```{r}
+plot(Boston$age,Boston$crim)
+```
+As proportion of owner-occupied units built prior to 1940 increases, per capita crime rate increases. 
+```{r}
+plot(Boston$dis,Boston$crim)
+```
+As distance to five Boston employment centers increases, per capita crime rate decreases. 
+```{r}
+plot(Boston$medv,Boston$crim)
+```
+As median value of owner-occupied homes in $1000s increases, per capita crime rate decreases. 
+
+(d)
+```{r}
+hist(Boston$crim, breaks=50)
+head(Boston[order(Boston$crim,decreasing=T),],n=20)
+head(Boston[order(Boston$crim,decreasing=T),],n=1)
+tail(Boston[order(Boston$crim,decreasing=T),],n=1)
+```
+There are 18 suburbs of per capita crime rate larger than 20, particularly 4 suburbs has rate larger than 50, which are particularly high. The highest suburb reaches 88.9. The lowest suburb has rate 0.00632. 
+```{r}
+hist(Boston$tax, breaks=50)
+head(Boston[order(Boston$tax,decreasing=T),],n=140)
+head(Boston[order(Boston$tax,decreasing=T),],n=1)
+tail(Boston[order(Boston$tax,decreasing=T),],n=1)
+```
+There are 137 suburbs with particularly high tax rate which are larger than or equal to 666, other suburbs have low tax rates ranging from 187 to 469. The highest suburb has tax rate of 711. The lowest suburb has rate 187. 
+```{r}
+hist(Boston$ptratio, breaks=50)
+head(Boston[order(Boston$ptratio,decreasing=T),],n=50)
+head(Boston[order(Boston$ptratio,decreasing=T),],n=1)
+tail(Boston[order(Boston$ptratio,decreasing=T),],n=1)
+```
+There are 45 suburbs with high pupil-teacher ratio which are larger than or equal to 21.0, but it's not particularly high. The highest suburb has pupil-teacher ratio of 22. The lowest suburb has ratio 12.6. 
+
+(e) 35 suburbs.
+```{r}
+nrow(Boston[Boston$chas==1,])
+```
+
+(f) Median is 19.05.
+```{r}
+median(Boston$ptratio)
+```
+
+(g) There are two suburbs with lowest median value of owner-occupied homes, their other predictors are displayed below. 
+```{r}
+Boston[Boston$medv==min(Boston$medv),]
+summary(Boston)
+```
+Compared with the overall dataset, crim for the two suburbs are beyond the third quarter of the range, zn reaches minimum for both sububs, indus is around third quarter, the suburbs are not bounded by river, rm is within first quarter, age reaches maximum, dis is within first quarter, rad reaches maximum, tax and ptratio are around third quarter, lstat is beyond third quarter. In general, there are pros and cons living in these suburbs. 
+
+(h) There are 64 suburbs average more than seven rooms per dwelling. And 13 suburbs more than eight rooms. 
+```{r}
+nrow(Boston[Boston$rm>7,])
+nrow(Boston[Boston$rm>8,])
+summary(Boston[Boston$rm>8,])
+summary(Boston)
+```
+There suburbs have lower per capita crime rate, higher average number of rooms per dwelling, lower lower status of the population, high median value of owner-occupied homes in $1000s. 
+
+
+Chapter 3
+4.
+(a)
+The cubic regression has lower RSS because it is more flexible, the predicted points are closer to the data points, hence having lower RSS. 
+
+(b)
+The linear regression has lower RSS. Since the true relationship between X and Y is linear, the linear regression line is closer to the real data points, while the cubic regression is overfitting the data. 
+
+(c)
+The cubic regression has lower RSS because it is more flexible, the predicted points are closer to the data points, hence having lower RSS. 
+
+(d)
+There is not enough information on test data. It is not given whether the data points are closer to the cubic regression or to the linear regression. It dependes on test data. 
+
+9.
+(a)
+```{R}
+pairs(Auto)
+```
+
+(b)
+```{R}
+cor(subset(Auto,select=-name))
+```
+
+(c)
+```{R}
+lm.fit=lm(mpg~.,data=subset(Auto,select=-name))
+summary(lm.fit)
+```
+i. There is a relationship. F-statistic is much larger than 1 which indicates that there is a relatiosnhip; additionally, p-value is very small indicating rejection of the null hypothesis of no relationship. 
+
+ii. Displacement, weight, year, origin have more significant relationship to the response due to their low p-values. 
+
+iii. It means that for each increase in one year, mpg increases by 0.750773. 
+
+(d)
+```{R}
+par(mfrow=c(2,2))
+plot(lm.fit)
+```
+The fit is not precise enough because of the curve in the residual plots. There are outliers in the plots, which are points 323, 325, 327. There is a point with unusually high leverage but not significant residual, which is point 14. 
+
+(e)
+```{R}
+lm.fit2=lm(mpg~weight*year+origin*year+origin*weight,data=Auto)
+summary(lm.fit2)
+```
+For the interactions among three predictors weight, year, and origin, the interaction between weight and year is most significant, followed by the interaction between weight and origin. The interaction between year and origin is not significant. 
+
+(f)
+```{R}
+lm.fit0 = lm(mpg~displacement+weight+year+origin,data=Auto)
+summary((lm.fit0))
+```
+To compare the models that include transformation, I first set up the base case linear model with the four most significant variables displacement, weight, year, origin. $R^2$ is 0.82. 
+```{R}
+lm.fit3 = lm(mpg~I(displacement^2)+I(weight^2)+I(year^2)+I(origin^2),data=Auto)
+summary((lm.fit3))
+```
+This model involves all four variables squared. F-statistic is much larger than 1, and p-value is very small, showing that there is a relationship between the squares of those variables and the response. Particularly, the displacement squared has less significant relationship to the response than the other three due to its larger p-value. $R^2$ is 0.79 which does not improve compared to the base model. 
+```{R}
+lm.fit4 = lm(mpg~sqrt(displacement)+sqrt(weight)+sqrt(year)+sqrt(origin),data=Auto)
+summary((lm.fit4))
+```
+This model involves square root of all four variables. F-statistic is much larger than 1, and p-value is very small, showing that there is a relationship between the square roots of those variables and the response. Particularly, the square root of displacement has less significant relationship to the response than the other three variables due to its larger p-value. $R^2$ is 0.83, slightly improved from the base model. 
+```{R}
+lm.fit5 = lm(mpg~log(displacement)+log(weight)+log(year)+log(origin),data=Auto)
+summary((lm.fit5))
+```
+This model involves the log of all four variables. F-statistic is much larger than 1, and p-value is very small, showing that there is a relationship between the log of those variables and the response. Particularly, the log of displacement has less significant relationship to the response than the other three variables due to its larger p-value. $R^2$ is 0.84 which improves slightly compared with the base model. 
+```{R}
+lm.fit.op = lm(mpg~displacement+log(weight)+log(year)+weight*year+I(origin^2),data=Auto)
+summary((lm.fit.op))
+```
+Overall, the variable displacement seems to be not significant any more after being transformed, so for the optimum model it might be better to keep it as a linear variable; it might be good to take log for the year and weight variables due to their lowest p-value and the overall higher $R^2$ in lm.fit5, and I might include the interaction between them as well, supported by the result observed in (e); for origin, I would take origin squared because it has the lowest p-value as a factor in lm.fit.4 among all transformed models. 
+lm.fit.op has $R^2$ of 0.86 which proves an improvement in modelling. 
+
+
+15. 
+(a)
+```{R}
+lm.fit.zn=lm(crim~zn,data=Boston)
+summary(lm.fit.zn)
+lm.fit.indus=lm(crim~indus,data=Boston)
+summary(lm.fit.indus)
+lm.fit.chas=lm(crim~chas,data=Boston)
+summary(lm.fit.chas)
+lm.fit.nox=lm(crim~nox,data=Boston)
+summary(lm.fit.nox)
+lm.fit.rm=lm(crim~rm,data=Boston)
+summary(lm.fit.rm)
+lm.fit.age=lm(crim~age,data=Boston)
+summary(lm.fit.age)
+lm.fit.dis=lm(crim~dis,data=Boston)
+summary(lm.fit.dis)
+lm.fit.rad=lm(crim~rad,data=Boston)
+summary(lm.fit.rad)
+lm.fit.tax=lm(crim~tax,data=Boston)
+summary(lm.fit.tax)
+lm.fit.ptratio=lm(crim~ptratio,data=Boston)
+summary(lm.fit.ptratio)
+lm.fit.black=lm(crim~black,data=Boston)
+summary(lm.fit.black)
+lm.fit.lstat=lm(crim~lstat,data=Boston)
+summary(lm.fit.lstat)
+lm.fit.medv=lm(crim~medv,data=Boston)
+summary(lm.fit.medv)
+```
+Predictors zn, indus, nox, rm, age, dis, rad, tax, ptratio, black, lstat, medv. 
+```{R}
+par(mfrow=c(2,2))
+plot(lm.fit.zn)
+plot(lm.fit.indus)
+plot(lm.fit.nox)
+plot(lm.fit.rm)
+plot(lm.fit.age)
+plot(lm.fit.dis)
+plot(lm.fit.rad)
+plot(lm.fit.tax)
+plot(lm.fit.ptratio)
+plot(lm.fit.black)
+plot(lm.fit.lstat)
+plot(lm.fit.medv)
+```
+
+(b)
+```{R}
+lm.fit.all=lm(crim~.,data=Boston)
+summary(lm.fit.all)
+```
+There is a relationship overall to the response due to the fact that F-statistic is much larger than 0 and that p-value is very small. For zn, indus, dis, rad, black, medv, we can reject the null hypothesis, due to their low p-value. 
+
+(c)
+```{R}
+x=c(coefficients(lm.fit.zn)[2],coefficients(lm.fit.indus)[2],coefficients(lm.fit.chas)[2],coefficients(lm.fit.nox)[2],coefficients(lm.fit.rm)[2],coefficients(lm.fit.age)[2],coefficients(lm.fit.dis)[2],coefficients(lm.fit.rad)[2],coefficients(lm.fit.tax)[2],coefficients(lm.fit.ptratio)[2],coefficients(lm.fit.black)[2],coefficients(lm.fit.lstat)[2],coefficients(lm.fit.medv)[2])
+y=coefficients(lm.fit.all)[2:14]
+plot(x,y)
+```
+Nearly all predictors approximately agree between the univariate regression coefficients and the multiple regression coefficients, except for the outlier nox, which has -10.31 as the multiple regression coefficient but 31.25 as the linear regression coefficient. 
+
+(d)
+```{R}
+lm.fit.zn2=lm(crim~poly(zn,3),data=Boston)
+summary(lm.fit.zn2)
+```
+zn: there is evidence for non-linear association, because its polynomial of degree 2 is significant. 
+```{R}
+lm.fit.indus2=lm(crim~poly(indus,3),data=Boston)
+summary(lm.fit.indus2)
+```
+indus: there is evidence for non-linear association, because its polynomial of degree 3 is significant. 
+```{R}
+lm.fit.chas2=lm(crim~poly(chas,1),data=Boston)
+summary(lm.fit.chas2)
+```
+chas: there is no evidence for non-linear association, because I cannot fit a polynomial model for chas. 
+```{R}
+lm.fit.nox2=lm(crim~poly(nox,3),data=Boston)
+summary(lm.fit.nox2)
+```
+nox: there is evidence for non-linear association, because its polynomial of degree 3 is significant. 
+```{R}
+lm.fit.rm2=lm(crim~poly(rm,3),data=Boston)
+summary(lm.fit.rm2)
+```
+rm: there is evidence for non-linear association, because its polynomial of degree 2 is significant. 
+````{R}
+lm.fit.age2=lm(crim~poly(age,3),data=Boston)
+summary(lm.fit.age2)
+```
+age: there is evidence for non-linear association, because its polynomial of degree 3 is significant. 
+```{R}
+lm.fit.dis2=lm(crim~poly(dis,3),data=Boston)
+summary(lm.fit.dis2)
+```
+dis: there is evidence for non-linear association, because its polynomial of degree 3 is significant. 
+```{R}
+lm.fit.rad2=lm(crim~poly(rad,3),data=Boston)
+summary(lm.fit.rad2)
+```
+rad: there is evidence for non-linear association, because its polynomial of degree 2 is significant. 
+```{R}
+lm.fit.tax2=lm(crim~poly(tax,3),data=Boston)
+summary(lm.fit.tax2)
+```
+tax: there is evidence for non-linear association, because its polynomial of degree 2 is significant. 
+```{R}
+lm.fit.ptratio2=lm(crim~poly(ptratio,3),data=Boston)
+summary(lm.fit.ptratio2)
+```
+ptratio: there is evidence for non-linear association, because its polynomial of degree 3 is significant. 
+```{R}
+lm.fit.black2=lm(crim~poly(black,3),data=Boston)
+summary(lm.fit.black2)
+```
+black: there is no evidence for non-linear association, because only its polynomial of degree 1 is significant. 
+```{R}
+lm.fit.lstat2=lm(crim~poly(lstat,3),data=Boston)
+summary(lm.fit.lstat2)
+```
+lstat: there is evidence for non-linear association, because its polynomial of degree 2 is significant. 
+```{R}
+lm.fit.medv2=lm(crim~poly(medv,3),data=Boston)
+summary(lm.fit.medv2)
+```
+medv: there is evidence for non-linear association, because its polynomial of degree 3 is significant. 
+
+
+Chapter 4
+6.
+(a)
+$Pr=\frac{e^{\beta_0+\beta_1x_1+\beta_2x_2}}{1+e^{\beta_0+\beta_1x_1+\beta_2x_2}}=\frac{e^{-6+0.05\times40+1\times3.5}}{1+e^{-6+0.05\times40+1\times3.5}}=0.38$
+
+(b)
+$Pr=\frac{e^{\beta_0+\beta_1x_1+\beta_2x_2}}{1+e^{\beta_0+\beta_1x_1+\beta_2x_2}}=\frac{e^{-6+0.05\times{t}+1\times3.5}}{1+e^{-6+0.05\times{t}+1\times3.5}}=0.5$
+
+$e^{-2.5+0.05\times{t}}=1$
+
+$-2.5+0.05\times{t}=0$
+
+$t=50$.
