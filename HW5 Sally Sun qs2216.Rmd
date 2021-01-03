@@ -1,0 +1,102 @@
+---
+title: "HW5 Sally Sun qs2216"
+output: pdf_document
+---
+## chp9/5
+(a)
+```{r}
+set.seed(1)
+x1=runif(500)-0.5
+x2=runif(500)-0.5
+y=1*(x1^2-x2^2 > 0)
+```
+(b)
+```{r}
+plot(x1,x2,col=ifelse(y>0,'red','green'))
+```
+(c)
+```{r}
+l.fit=glm(y~.,family='binomial',data=data.frame(x1,x2,y))
+```
+(d)
+```{r}
+pred=predict(l.fit,data.frame(x1,x2))
+plot(x1,x2,col=ifelse(pred>0,'red','green'))
+```
+(e)
+```{r}
+l.fit=glm(y~poly(x1,2)+poly(x2,2),family='binomial', data=data.frame(x1,x2,y))
+```
+(f)
+```{r}
+pred=predict(l.fit,data.frame(x1,x2))
+plot(x1,x2,col=ifelse(pred>0,'red','green'))
+```
+(g)
+```{r}
+library(e1071)
+s.fit=svm(y~.,data=data.frame(x1,x2,y=as.factor(y)),kernel='linear')
+pred1=predict(s.fit,data.frame(x1,x2))
+plot(x1,x2,col=ifelse(pred1==0,'red','green'))
+```
+(h)
+```{r}
+s.fit=svm(y~.,data=data.frame(x1,x2,y=as.factor(y)),kernel='polynomial',degree=2)
+pred2=predict(s.fit,data.frame(x1,x2))
+plot(x1,x2,col=ifelse(pred2==0,'red','green'))
+```
+(i) My linear svm has accuracy rate of 0.522 while the non-linear svm has accuracy rate of 0.978, so The non-liner model works much better. 
+```{r}
+sum(pred1==y)/length(y)
+sum(pred2==y)/length(y)
+```
+
+
+## chp10/4
+(a) There is not enough information to tell because the single linkage dendogram could either fuse at the same height or at lower height than the complete linkage dendogram. We are not sure whether the minimal distance in single linkage dendogram is equal to the maximal distance in complete linkage dendogram. 
+
+
+(b) They will fuse at the same height because there is only a single distance between them. The minimal distance in single linkage dendogram and the maximal distance in complete linkage dendogram are the same in this case.
+
+## chp10/10
+(a)
+```{r}
+set.seed(1)
+x1=matrix(rnorm(20*50,mean=0), nrow=20)
+x2=matrix(rnorm(20*50,mean=10), nrow=20)
+x3=matrix(rnorm(20*50,mean=20), nrow=20)
+x=rbind(x1,x2,x3)
+```
+(b)
+```{r}
+pca=prcomp(x)
+plot(pca$x[,1:2],col=c(rep(1,20),rep(2,20),rep(3,20)))
+```
+(c) The observations are classified into the three clusters perfectly. 
+```{r}
+km=kmeans(x,3,nstart=20)
+table(km$cluster,c(rep(1,20),rep(2,20),rep(3,20)))
+```
+(d) One of the previous three individual clusters is now combined with another cluster. 
+```{r}
+km=kmeans(x,2,nstart=20)
+table(km$cluster,c(rep(1,20),rep(2,20),rep(3,20)))
+```
+(e) One of the previous three individual clusters is now splitted into two separate clusters. 
+```{r}
+km=kmeans(x,4,nstart=20)
+table(km$cluster,c(rep(1,20),rep(2,20),rep(3,20)))
+```
+(f) The observations are classified into the three clusters perfectly. 
+```{r}
+km=kmeans(pca$x[, 1:2],3,nstart=20)
+table(km$cluster,c(rep(1,20),rep(2,20),rep(3,20)))
+```
+(g) The observations are classified into the three clusters perfectly. Scaling does not make much difference on cluster classifications. 
+```{r}
+km=kmeans(scale(x),3,nstart=20)
+table(km$cluster,c(rep(1,20),rep(2,20),rep(3,20)))
+```
+
+## Supplements
+![Alt](homework5_supplement.pdf)
