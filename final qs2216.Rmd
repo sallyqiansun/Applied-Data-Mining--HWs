@@ -1,0 +1,187 @@
+---
+title: "Data Mining Final   Sally Sun   qs2216"
+output: pdf_document
+---
+
+```{r include = FALSE, set.seed(1234)}
+knitr::opts_chunk$set(echo=FALSE)
+```
+## Data Preparation
+The dataset I picked is the Top 2000 Spotify Songs data. I chose this dataset because I have been interested in this problem for a long time. I was always wondering whether any features combined would lead to the popularity of a song. 
+
+The dataaset contains 14 features such as genre, year, beats per minute, duration, etc, and an response variable called popularity which ranks the popularity of each song. This response variable is important because I am eager to find out whether I could predict popularity based on some known variables. 
+
+Before starting with my modelling, I did some cleaning so that the spaces in column names are replaced with dots. Additioanlly, one of the features, duration, is string type but should be integer, so I convert it to integer before moving on. 
+```{r}
+library("stringr")
+data=read.csv("Spotify-2000.csv")
+data=na.omit(data)
+names(data)=str_replace_all(names(data), c(" " = "."))
+data$Length..Duration.=as.integer(data$Length..Duration.)
+range(data$Popularity)
+```
+The response variable ranges from 11 to 100, the more popular a song is, the higher the value is, no transformation is needed. This would be a regression problem since I would keep the response value as numeric. My features would include year, tempo, energy, danceability, loudness, valence, length, acoustic, and speechiness. All variables are numeric, the higher the value is, the higher the rank in the feature is. 
+
+Before starting with modelling, I perform a train-test split in which 80% are training data and 20% are testing data. 
+```{r}
+sample=sample(1:nrow(data), nrow(data)*0.8)
+train=data[sample,]
+test=data[-sample,]
+```
+## Simple Linear Regression
+I start with a simple linear regression as shown below. 
+```{r}
+lm=lm(Popularity~Year+Beats.Per.Minute..BPM.+Energy+Danceability+Loudness..dB.+Liveness+Valence+Length..Duration.+Acousticness+Speechiness,data=train)
+summary(lm)
+plot(lm)
+```
+In the simple linear regression model, R^2 is 0.13 and p-value is less than 2.2e-16. In the residuals vs. fitted values plot, there is only a little fluctuations of residuals, which indicates a well-fitted linear model. In the normal Q-Q plot, residuals are close to a straight line with only a few points slightly offset, so they are normally distributed. The scale-location plot shows that there is a well spread until when fitted values are over 60, as there is a narrower space at the bottom and much wider at the top showing the residuals do not have perfect constant variance and the line is not horizontal. 
+
+For the leverage plot, there is one point #865 which has a bit higher leverage. In order to determine whether it's influential, I try to compare the new model with this point removed and compare R^2 with the original model. 
+```{r}
+data1=data[-865,]
+lm1=lm(Popularity~Year+Beats.Per.Minute..BPM.+Energy+Danceability+Loudness..dB.+Liveness+Valence+Length..Duration.+Acousticness+Speechiness,data=data1[sample,])
+summary(lm1)
+```
+The result of the new model shows that there is no significant improvement when the high leverage point is removed. So I would still keep the original full data. For the simple linear regression model on the full dataset, test MSE can be calculated:
+```{r}
+pred=predict.lm(lm,test)
+mean((pred-test$Popularity)^2)
+```
+For simple linear regression, test MSE is 185.3. 
+
+## Best Subset Selection on Linear Regression 
+Furthermore, I run the best subset selection on the training data, and extract the coefficients from regfit for the best model of that size, multiply them into the appropriate columns of the test model matrix to form the predictions, and compute the test MSE.
+```{r}
+library('leaps')
+regfit=regsubsets(Popularity~Year+Beats.Per.Minute..BPM.+Energy+Danceability+Loudness..dB.+Liveness+Valence+Length..Duration.+Acousticness+Speechiness,data=train,nvmax=10) 
+
+test.mat=model.matrix(Popularity~Year+Beats.Per.Minute..BPM.+Energy+Danceability+Loudness..dB.+Liveness+Valence+Length..Duration.+Acousticness+Speechiness,data=test)
+
+val.errors=rep(0,10)
+for(i in 1:10){
+  coefi=coef(regfit,id=i)
+  pred=test.mat[,names(coefi)]%*%coefi
+  val.errors[i]=mean((test$Popularity-pred)^2) 
+}
+which.min(val.errors)
+min(val.errors)
+```
+The minimum MSE shows that the best model takes 7 out of the ten features. Test MSE is 184.9, slightly better than the linear regression model. Not much improvement shown. 
+```{r}
+coef(regfit,7)
+```
+This model takes 7 features including year, energy, danceability, loudness, liveness, acousticness, and speechiness. 
+
+Furthermore, I try to plot the RSS, R^2, Cp, and BIC which would help me decide which model is the most ideal. I marked out points with highest adjusted R^2, minimum Cp, and minimum BIC value. 
+```{r}
+reg.summary=summary(regfit)
+plot(reg.summary$rss ,xlab="Number of Variables",ylab="RSS",type='l')
+plot(reg.summary$adjr2 ,xlab="Number of Variables",ylab="Adjusted R^2",type="l")
+points(which.max(reg.summary$adjr2),reg.summary$adjr2[which.max(reg.summary$adjr2)], col="red",cex=2,pch=20)
+plot(reg.summary$cp ,xlab="Number of Variables",ylab="Cp",type='l')
+points(which.min(reg.summary$cp ),reg.summary$cp [which.min(reg.summary$cp )],col="red",cex=2,pch=20)
+plot(reg.summary$bic ,xlab="Number of Variables ",ylab="BIC",
+type='l')
+points(which.min(reg.summary$bic ),reg.summary$bic [which.min(reg.summary$bic )],col="red",cex=2,pch=20)
+```
+
+From the plots, it seems that the 8-variable model is the most preferable, the corresponding test MSE is 185.0. I output the coefficients here. 
+```{r}
+coef(regfit,8)
+val.errors[8]
+```
+
+## Cross Validation on linear Regression
+I then try to apply cross validation to see if I can get a better model than best subset selection. I create a vector that allocates each observation to one of k=10 folds, and then create a matrix to store the results. Within cross validation, in the jth fold, the elements of folds that equal j are in the test set, and the rest are in the training set. I make our predictions for each model size and compute the test errors on the appropriate subset, and store them in the matrix cv.errors.
+```{r}
+predict.regfit=function(object,newdata,id,...){
+  form=as.formula(object$call[[2]])
+  mat=model.matrix(form,newdata)
+  coefi=coef(object,id=id)
+  xvars=names(coefi)
+  mat[,xvars]%*%coefi
+}
+
+folds=sample(1:10,nrow(data),replace=TRUE)
+cv.errors=matrix(0,10,10, dimnames=list(NULL, paste(1:10)))
+for(j in 1:10){
+  best.fit=regsubsets(Popularity~Year+Beats.Per.Minute..BPM.+Energy+Danceability+Loudness..dB.+Liveness+Valence+Length..Duration.+Acousticness+Speechiness,data=data[folds!=j,],nvmax=10)
+  for(i in 1:10){
+    pred=predict.regfit(best.fit,data[folds==j,],id=i)
+    cv.errors[j,i]=mean((data$Popularity[folds==j]-pred)^2)
+  }
+}
+plot(apply(cv.errors ,2,mean) ,type='b')
+min(cv.errors)
+```
+The minimum of cv.errors shows that cross validation also selects the 6-variable model. This model yields much smaller MSE, 152.8. My next step is to find out the new 6-variable linear model. 
+```{r}
+best.fit=regsubsets(Popularity~Year+Beats.Per.Minute..BPM.+Energy+Danceability+Loudness..dB.+Liveness+Valence+Length..Duration.+Acousticness+Speechiness,data=data,nvmax=10)
+coef(best.fit,6)
+```
+This improved model includes features year, energy, danceability, loudness, liveness, and speechiness. 
+
+## Cross Validation on Lasso Regression
+The second model I run is the lasso regression model with cross validation, I run it over a grid of $\lambda$ values ranging from $10^{10}$ to $10^{-2}$. After finding out the best $\lambda$ value, I fit a ridge regression model on the training set using the $\lambda$, and evaluate its MSE on the test set.
+```{r}
+library(glmnet)
+grid=10^seq(10,-2,length=100)
+x=model.matrix(Popularity~Year+Beats.Per.Minute..BPM.+Energy+Danceability+Loudness..dB.+Liveness+Valence+Length..Duration.+Acousticness+Speechiness,data=train)
+cv.out=cv.glmnet(x,train$Popularity,alpha=1)
+lasso=glmnet(x,train$Popularity,alpha=1,lambda=grid)
+newx=model.matrix(Popularity~Year+Beats.Per.Minute..BPM.+Energy+Danceability+Loudness..dB.+Liveness+Valence+Length..Duration.+Acousticness+Speechiness,data=test)
+pred=predict(lasso,newx=newx,s=cv.out$lambda.min)
+mean((pred-test$Popularity)^2)
+```
+This model yields test MSE=185.1. The model doesn't provide improvement compared with cross-validation on linear regression. 
+
+## Random Forest
+```{r}
+library("tree")
+tree=tree(Popularity~Year+Beats.Per.Minute..BPM.+Energy+Danceability+Loudness..dB.+Liveness+Valence+Length..Duration.+Acousticness+Speechiness,train)
+summary(tree)
+plot(tree)
+text(tree ,pretty=0)
+```
+In this tree model, only three features are included. I further develop my model to a random forest model. 
+```{r}
+library(randomForest)
+rf=randomForest(Popularity~Year+Beats.Per.Minute..BPM.+Energy+Danceability+Loudness..dB.+Liveness+Valence+Length..Duration.+Acousticness+Speechiness,data=train,mtry=10,importance =TRUE)
+pred=predict(rf,newdata=test)
+mean((pred-test$Popularity)^2)
+```
+Test MSE is 175.8, which shows improvement. 
+
+##Boosting
+```{r}
+library(gbm)
+boost=gbm(Popularity~Year+Beats.Per.Minute..BPM.+Energy+Danceability+Loudness..dB.+Liveness+Valence+Length..Duration.+Acousticness+Speechiness,data=train,distribution="gaussian",n.trees=100,interaction.depth=5)
+pred=predict(boost,newdata=test,n.trees=100)
+mean((pred-test$Popularity)^2)
+```
+Test MSE is 178.5, which shows a bit worse result compared to the random forest model. 
+
+## Summary
+Simple Linear Regression on all 10 features yields test MSE=185.3. Analyzing the plots draws the conclusion that the model is very linear. 
+
+Best subset selection on linear regression model includes 8 features including year, energy, danceability, loudness, liveness, valence, acousticness, and speechiness, with test MSE=185. 
+
+Cross validation on linear regression model includes 6 features year, energy, danceability, loudness, liveness, and speechiness, with test MSE=152.8. 
+
+Cross validation on Lasso regression has test MSE=185.1. 
+
+Random forest regression model produces test MSE=175.8. 
+
+Boosting produces test MSE=178.5. 
+
+Overall, cross validation on linear regression produces the best test MSE. Revisiting the model, $-0.24*Year-0.089*Energy+0.33*Danceability+1.39*Loudness-0.096*Liveness+0.34*Speechiness+557.9$. According to my result, features beats per minute, valence, duration, and acousticness don't contribute much to popularity of a song. This indicates that the audience does not care as much about tempo, valence, length, and acousticness compared with other aspects such as speechiness, loudness, etc. Also, the older a song is, the less popular it is, which also makes sense. 
+```{r}
+names(data)
+```
+## Further improvement
+In my modelling, I did not include the feature genre since there are 149 categories. Some manual cleaning needs to be done to group some subgroups together, so that I have a few categories like jazz, pop, rock, etc, which would help my analysis a lot. 
+```{r}
+length(unique(data$Top.Genre))
+unique(data$Top.Genre)[1:50]
+```
