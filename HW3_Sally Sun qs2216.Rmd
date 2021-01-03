@@ -1,0 +1,182 @@
+---
+title: "HW3_Sally Sun qs2216"
+output:
+  html_document:
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+**Chapter 6 Exercise 10**
+(a)
+```{r}
+set.seed(1)
+X=data.frame(matrix(rnorm(20000), 1000, 20))
+B=rnorm(20)
+B[1] = 0
+B[2] = 0
+B[3] = 0
+B[18] = 0
+B[19] = 0
+B[20] = 0
+Y=as.matrix(X)%*%B+rnorm(1000)
+data=cbind(Y,X)
+```
+
+(b)
+```{r}
+ind=sample(seq(1000),100)
+train=data[ind,]
+test=data[-ind,]
+```
+(c)
+```{r}
+library(leaps)
+train_fit=regsubsets(Y~.,data=train,nvmax=30)
+train.mat=model.matrix(Y~.,data=train)
+mse=rep(NA,20)
+for(i in 1:20){
+  coef=coef(train_fit,id=i)
+  pred=train.mat[,names(coef)]%*%coef
+  mse[i]=mean((train$Y-pred)^2)
+}
+plot(mse)
+```
+(d)
+```{r}
+test.mat=model.matrix(Y~.,data=test)
+mse=rep(NA,20)
+for(i in 1:20){
+  coef=coef(train_fit,id=i)
+  pred=test.mat[,names(coef)]%*%coef
+  mse[i]=mean((test$Y-pred)^2)
+}
+plot(mse)
+```
+(e)
+```{r}
+which.min(mse)
+```
+(f)
+```{r}
+coef(train_fit,which.min(mse))
+```
+In the true model, the first three and the last three coefficients are set to 0. In this best model, all parameters that are set to 0 are correctly reflected. 
+
+(g)
+```{r}
+mse = rep(NA, 20)
+for (i in 1:20) {
+    coef = coef(train_fit,id=i)
+    mse[i] = sqrt(sum((B[colnames(X) %in% names(coef)] - coef[names(coef) %in% colnames(X)])^2) + 
+        sum(B[!(colnames(X) %in% names(coef))])^2)
+}
+plot(mse, xlab = "number of coefficients", ylab = "mse of coefficients")
+which.min(mse)
+```
+When r=5, mse is minimized, as r increases from 5, mse fluatuates, increasing then decreasing. 
+The previous plot displays least test mse occurs at r=14. This plot displays least paraeter mse. In the two cases the number of parameters can be different. 
+
+**Chapter 7 Exercise 2**
+(a) Since $lambda=\infty$, so $g^0{(x)}=g(x)$ must goes to 0, hence $g(x)=0$. 
+```{r}
+plot(1, xlab="x", ylab="g(x)",xlim=c(-10, 10), ylim=c(-10, 10), type="n")
+abline(h=0)
+```
+(b) Since $lambda=\infty$, so $g^1{(x)}=g'(x)$ must goes to 0, hence $g(x)=k$ where k is constant. When g(x) is constant, the first part is minimized by taking $g(x)=y\bar$. Here I plot an arbitrary constant line. 
+```{r}
+plot(1, xlab="x", ylab="g(x)",xlim=c(-10, 10), ylim=c(-10, 10), type="n")
+abline(h=sample(0:10,1))
+```
+(c) Since $lambda=\infty$, so $g^2{(x)}=g''(x)$ must goes to 0, so $g'(x)=k$ where k is constant, hence $g(x)=ax+b$ where a and b are constants. Here I plot an arbitrary line. 
+```{r}
+plot(1, xlab="x", ylab="g(x)",xlim=c(-10, 10), ylim=c(-10, 10), type="n")
+abline(a=sample(0:10,1),b=sample(0:10,1))
+```
+(d) Since $lambda=\infty$, so $g^3{(x)}=g'''(x)$ must goes to 0, so $g''(x)=k$ where k is constant, hence $g'(x)=mx+k$ where a and b are constants, hence $g'(x)=ax^2+bx+c$ where a, b, and c are constants. Here I plot an arbitrary parabola. 
+```{r}
+curve(x^2+sample(0:10,1)*x+sample(0:1,1), from=-10, to=10, xlab="x", ylab="g(x)")
+```
+(e) As $\lambda=0$, the penalty term is insignificant since it's 0, so g(x) is the interpolating spline, can be found through minimizing RSS. 
+
+
+**Chapter 7 Exercise 3**
+The curve is y=1+x in domain -2 to 1, with intercept 1 and slope 1, and $y=1+x-2(x-1)^2I(x>=1)$ in domain 1 to 2. 
+```{R}
+x=-2:2
+y=1+x-2*(x-1)^2*I(x>=1)
+plot(x,y)
+first=function(x) 1+x
+second=function(x) 1+x-2*(x-1)^2*I(x>=1)
+plot(first,-2,1,add=TRUE)
+plot(second,1,2,add=TRUE)
+```
+**Chapter 7 Exercise 9**
+(a)
+```{r}
+library(MASS)
+poly.fit=glm(nox~poly(dis,3),data=Boston)
+summary(poly.fit)
+plot(nox~dis,data=Boston)
+attach(Boston)
+pred=predict(poly.fit,data.frame(dis=seq(from=range(dis)[1],to=range(dis)[2],by=0.1)))
+lines(seq(from=range(dis)[1],to=range(dis)[2],by=0.1), pred)
+```
+(b)
+```{r}
+plot(nox~dis,data=Boston)
+rss=rep(NA, 10)
+for (i in 1:10) {
+    poly.fit=glm(nox~poly(dis,i),data=Boston)
+    pred=predict(poly.fit,data.frame(dis=seq(from=range(dis)[1],to=range(dis)[2],by=0.1)))
+    rss[i]=sum(poly.fit$residuals^2)
+    lines(seq(from=range(dis)[1],to=range(dis)[2],by=0.1), pred)
+}
+plot(rss)
+```
+(c) After performing 10-fold cross validation of degrees 1 to 8, the minimum of cross validation error occurs at degree 4, this is the optimal degree.  
+```{r}
+library(boot)
+set.seed(1)
+cv = rep(NA, 8)
+for (i in 1:8) {
+    poly.fit = glm(nox ~ poly(dis, i), data = Boston)
+    cv[i] = cv.glm(Boston, poly.fit, K=10)$delta[2]
+}
+plot(1:8,cv, xlab = "degree", ylab = "cross validation error")
+which.min(cv)
+```
+(d) Dis ranges roughly from 1 to 13. I choose the knots in order to split this range into four equal length spaces because degree of freedom is 4, so knots=c(4,7,10)). 
+```{r}
+library(splines)
+bs.fit = lm(nox~bs(dis,knots=c(4,7,10)),data = Boston)
+summary(bs.fit)
+pred = predict(bs.fit, list(dis=seq(from=range(dis)[1],to=range(dis)[2],by=0.1)))
+plot(nox~dis, data=Boston)
+lines(seq(from=range(dis)[1],to=range(dis)[2],by=0.1), pred)
+```
+(e) Training RSS decreases and reaches minimum at degree of 19.
+```{r}
+rss=rep(NA,20)
+plot(nox~dis, data=Boston)
+for (i in 3:20) {
+    bs.fit=lm(nox~bs(dis,df=i), data=Boston)
+    pred=predict(bs.fit,data.frame(dis=seq(from=range(dis)[1],to=range(dis)[2],by=0.1)))
+    rss[i]=sum(bs.fit$residuals^2)
+    lines(seq(from=range(dis)[1],to=range(dis)[2],by=0.1), pred)
+}
+plot(3:20,rss[3:20],xlab='degree',ylab='rss',type='l')
+which.min(rss)
+```
+(f) After performing 10-fold cross validation of degrees 3 through 20, I find the optimal degree at 8 due to its lowest cross validation error.
+```{r}
+cv=rep(NA,20)
+for (i in 3:20) {
+    bs.fit=glm(nox~bs(dis,df=i), data=Boston)
+    cv[i]=cv.glm(Boston,bs.fit,K=10)$delta[2]
+}
+plot(3:20,cv[3:20],xlab='degree',ylab='cross validation error',type='l')
+which.min(cv)
+```
