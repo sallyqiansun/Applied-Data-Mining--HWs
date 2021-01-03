@@ -1,0 +1,240 @@
+---
+title: "HW2 Sally Sun qs2216"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+**Chapter 4 Exercise 10**
+(a)
+```{r}
+library(ISLR)
+summary(Weekly)
+cor(Weekly[,-ncol(Weekly)])
+plot(Weekly$Volume)
+```
+From the correlation table, we can see that the correlations between the lag variables and today's returns are close to 0, which indicate that there are almost no correlations between today's return and previous days' returns. However, the correlation between year and volume is 0.84, showing that there is a correlation between year and volume. 
+Overall, there are 484 observations going down and 605 going up, there are more observations when the direction is up, as shown by the summary. 
+Volume is increasing over time as shown in the plot. 
+
+(b)
+```{r}
+glm.fit=glm(Direction~Lag1+Lag2+Lag3+Lag4+Lag5+Volume, data=Weekly, family=binomial)
+summary(glm.fit)
+```
+Lag2 seems to be statistically significant, due to its lowest p-value.
+
+(c)
+```{r}
+glm.probs=predict(glm.fit,type="response")
+glm.pred=rep("Down",length(Weekly$Direction))
+glm.pred[glm.probs>0.5]="Up"
+table(glm.pred,Weekly$Direction)
+mean(glm.pred==Weekly$Direction )
+54+557
+length(Weekly$Direction)
+```
+The model has predicted 54 cases "Down" correctly, and 557 cases "Up" correctly. 
+In total, 611 predictions are correct out of 1089 predictions. 
+The model correctly predicts 56.1% of the market data accurately. 
+
+(d)
+```{r}
+train=Weekly[Weekly$Year<2009,]
+test=Weekly[Weekly$Year>=2009,]
+glm.fit=glm(Direction~Lag2, data=train, family=binomial)
+glm.probs=predict(glm.fit,test,type="response")
+glm.pred=rep("Down",length(test$Direction))
+glm.pred[glm.probs>0.5]="Up"
+table(glm.pred,test$Direction)
+mean(glm.pred==test$Direction)
+```
+
+(e)
+```{r}
+library(MASS)
+lda.fit=lda(Direction~Lag2, data=train)
+lda.pred=predict(lda.fit,test)
+table(lda.pred$class,test$Direction)
+mean(lda.pred$class==test$Direction)
+```
+
+(f)
+```{r}
+qda.fit=qda(Direction~Lag2, data=train)
+qda.pred=predict(qda.fit,test)
+table(qda.pred$class,test$Direction)
+mean(qda.pred$class==test$Direction)
+```
+
+(g)
+```{r}
+library(class)
+set.seed(1)
+knn.pred=knn(cbind(train$Lag2),cbind(test$Lag2),train$Direction,k=1)
+table(knn.pred,test$Direction)
+mean(knn.pred==test$Direction)
+```
+
+(h)
+Logistic regression and LDA produce better results, due to their higher fraction of accurate prediction, which is 0.625. 
+
+(i)
+LDA with all variables:
+```{r}
+lda.fit=lda(Direction~., data=train)
+lda.pred=predict(lda.fit,test)
+table(lda.pred$class,test$Direction)
+mean(lda.pred$class==test$Direction)
+```
+LDA with all lags:
+```{r}
+lda.fit=lda(Direction~Lag1+Lag2+Lag3+Lag4+Lag5, data=train)
+lda.pred=predict(lda.fit,test)
+table(lda.pred$class,test$Direction)
+mean(lda.pred$class==test$Direction)
+```
+LDA with volume:
+```{r}
+lda.fit=lda(Direction~Volume, data=train)
+lda.pred=predict(lda.fit,test)
+table(lda.pred$class,test$Direction)
+mean(lda.pred$class==test$Direction)
+```
+QDA with all variables:
+```{r}
+qda.fit=qda(Direction~., data=train)
+qda.pred=predict(qda.fit,test)
+table(qda.pred$class,test$Direction)
+mean(qda.pred$class==test$Direction)
+```
+QDA with volume:
+```{r}
+qda.fit=qda(Direction~Volume, data=train)
+qda.pred=predict(qda.fit,test)
+table(qda.pred$class,test$Direction)
+mean(qda.pred$class==test$Direction)
+```
+KNN with all variables, k=5:
+```{r}
+knn.pred=knn(cbind(train$Lag1,train$Lag2,train$Lag3,train$Lag4,train$Lag5,train$Volume),cbind(test$Lag1,test$Lag2,test$Lag3,test$Lag4,test$Lag5,test$Volume),train$Direction,k=5)
+table(knn.pred,test$Direction)
+mean(knn.pred==test$Direction)
+```
+KNN with all variables, k=50:
+```{r}
+knn.pred=knn(cbind(train$Lag1,train$Lag2,train$Lag3,train$Lag4,train$Lag5,train$Volume),cbind(test$Lag1,test$Lag2,test$Lag3,test$Lag4,test$Lag5,test$Volume),train$Direction,k=50)
+table(knn.pred,test$Direction)
+mean(knn.pred==test$Direction)
+```
+KNN with volume, k=50:
+```{r}
+knn.pred=knn(cbind(train$Volume),cbind(test$Volume),train$Direction,k=50)
+table(knn.pred,test$Direction)
+mean(knn.pred==test$Direction)
+```
+Overall, LDA with all variables seem to produce the best results among all experimented models. 
+It predicts 36 "downs" and 61 "ups" correctly, among the 104 test cases, with fraction of accurate predictions 93.3%.
+
+
+
+**Chapter 5 Exercise 3**
+(a)
+The data is split into k equal-size folds. One of the folds is used as validation, and the rest folds combined are used as training. Then another individual fold is used as validation, and the rest folds combined are used as training. This process repeats k times until each fold has been used for validation once. The test error is the avearge of all k test errors. 
+
+(b)(i)
+Validation set: simpler to implement and less computationally expensive than cross validation because there is only one step of dividing the data into two sets, one for validation and one for training. 
+
+Cross validation: lower test error than validation set because it avoids the problem of randomness in set selection by averaging all k test errors in, so better fits the data. 
+
+(ii)
+LOOCV: lower bias than cross validation since it runs the cross validation k=n times and absolutely avoids the problem of randomness in set selection.
+
+Cross validation: less computationally expensive and lower variance than LOOCV since it runs k times instead of n times, and each set contains more observations. 
+
+
+
+**Chapter 5 Exercise 5**
+(a)
+```{r}
+set.seed(1)
+glm.fit=glm(default~income+balance,data=Default,family=binomial)
+```
+
+(b)
+```{r}
+train=sample(length(Default$default),length(Default$default)/2)
+glm.fit=glm(default~income+balance,data=Default,subset=train,family=binomial)
+glm.probs=predict(glm.fit,Default[-train,],type="response")
+glm.pred=rep("No",length(Default[-train,]$default))
+glm.pred[glm.probs>0.5]="Yes"
+mean(glm.pred!=Default[-train,]$default)
+```
+25.8% of the observations in the validation set are misclassified.
+
+(c) 
+train:validation = 2:1
+```{r}
+train=sample(length(Default$default),length(Default$default)/1.5)
+glm.fit=glm(default~income+balance,data=Default,subset=train,family=binomial)
+glm.probs=predict(glm.fit,Default[-train,],type="response")
+glm.pred=rep("No",length(Default[-train,]$default))
+glm.pred[glm.probs>0.5]="Yes"
+mean(glm.pred!=Default[-train,]$default)
+```
+
+train:validation = 4:1
+```{r}
+train=sample(length(Default$default),length(Default$default)/1.25)
+glm.fit=glm(default~income+balance,data=Default,subset=train,family=binomial)
+glm.probs=predict(glm.fit,Default[-train,],type="response")
+glm.pred=rep("No",length(Default[-train,]$default))
+glm.pred[glm.probs>0.5]="Yes"
+mean(glm.pred!=Default[-train,]$default)
+```
+
+train:validation = 5:1
+```{r}
+train=sample(length(Default$default),length(Default$default)/1.2)
+glm.fit=glm(default~income+balance,data=Default,subset=train,family=binomial)
+glm.probs=predict(glm.fit,Default[-train,],type="response")
+glm.pred=rep("No",length(Default[-train,]$default))
+glm.pred[glm.probs>0.5]="Yes"
+mean(glm.pred!=Default[-train,]$default)
+```
+The test error does not fluctuate much. In general, around 26% of the observations in the validation set are misclassified. 
+
+(d)
+```{r}
+train=sample(length(Default$default),length(Default$default)/2)
+glm.fit=glm(default~income+balance+student,data=Default,subset=train,family=binomial)
+glm.probs=predict(glm.fit,Default[-train,],type="response")
+glm.pred=rep("No",length(Default[-train,]$default))
+glm.pred[glm.probs>0.5]="Yes"
+mean(glm.pred!=Default[-train,]$default)
+```
+After running this chunk of code multiple times, I discover that the new test error is still around 0.026, which means including a dummy variable for student does not lead to a reduction in the test error rate. 
+
+
+
+**Chapter 6 Exercise 4**
+(a)
+iii The training RSS will steadily increase because as $\lambda$ increases, $\hat\beta_i$ are penalized more and start to move further away from their least square estimates, steadily decreasing to 0, flexibility decreases, hence increasing training RSS. 
+
+(b)
+ii The test RSS will decrease initially and start to increase in U shape because initially, as $\lambda$ increases, flexibility decreases, hence decreasing test RSS. As soon as $\hat\beta_i$ approach 0, the model is overly simple with coefficients close to 0, causing test RSS start to increase as overfitting occurs. 
+
+
+(c)
+iv The variance will steadily decrease. As $\lambda$ increases, flexibility decreases, and variance decreases. As $\hat\beta_i$ approaches 0, the model is overly simple with coefficients close to 0, resulting in very little variance. 
+
+
+(d) 
+iii The bias will steadily increase. As $\lambda$ increases, flexibility decreases, variance decreases, and bias increases. As $\hat\beta_i$ move further away from their least squares estimates, more bias is raised. 
+
+(e)
+v Irreducible error remains constant since it does not depend on variations in the model selection, hence independent of the parameters in the model. 
+
+
